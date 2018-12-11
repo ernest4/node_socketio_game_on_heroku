@@ -15,6 +15,7 @@ var scores = {
     red: 0
 };
 
+const PORT = process.env.PORT || 3000;
 
 app.use(express.static(__dirname + '/public'));
 
@@ -85,6 +86,6 @@ io.on('connection', function (socket){
     });
 });
 
-server.listen(8081, function(){
+server.listen(PORT, function(){
     console.log(`Listening on ${server.address().port}`);
 });
