@@ -68,7 +68,11 @@ io.on('connection', function (socket){
         players[socket.id].rotation = movementData.rotation;
 
         //emit message to all players about the player that moved
-        socket.broadcast.emit('playerMoved', players[socket.id]);
+            //socket.broadcast.emit('playerMoved', players[socket.id]);
+
+        /*volatile messages should be faster as they dont require confirmation 
+        (but then they may not reach the sender)*/
+        socket.volatile.broadcast.emit('playerMoved', players[socket.id]);
     });
 
     /*update the correct team’s score, generate a new location for the star, 
