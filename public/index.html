@@ -9,6 +9,21 @@
         <script src="/socket.io/socket.io.js"></script>
         <script src="//cdn.jsdelivr.net/npm/phaser@3.3.0/dist/phaser.min.js"></script>
         <script src="js/game.js"></script>
+
+        <p id="message"></p>
+
+        <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+        <script>
+        $(function () {
+            var socket = io();
+
+            socket.on('savedToDB', function(data){
+                console.log(data); //TESTING
+                
+                $('#message').text(data);
+            });
+        });
+        </script>
     </body>
 
 </html>
