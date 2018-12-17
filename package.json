@@ -7,7 +7,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "start": "node server.js"
+        "start": "node serverGG.js"
     },
     "keywords": [],
     "author": "",
