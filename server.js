@@ -206,7 +206,7 @@ var star;
 var scores;
 
 //periodically back up the score to database...
-setInterval(function(){
+/*setInterval(function(){
     if (star == null || scores == null) return; //not ready for saving yet...
 
     io.emit('savedToDB', `Saved the data to database... BLUE: ${scores.blue} RED: ${scores.red} Time: ${new Date().toTimeString()}`);
@@ -214,7 +214,7 @@ setInterval(function(){
     saveMatchData('star');
     saveMatchData('scores');
 
-}, 3000);
+}, 3000);*/
 
 
 
@@ -297,6 +297,16 @@ io.on('connection', function (socket){
         //broadcast
         io.emit('starLocation', star);
         io.emit('scoreUpdate', scores);
+    });
+
+    //for testing...
+    socket.on('saveToDB', function(){
+        if (star == null || scores == null) return; //not ready for saving yet...
+
+        io.emit('savedToDB', `Saved the data to database... BLUE: ${scores.blue} RED: ${scores.red} Time: ${new Date().toTimeString()}`);
+
+        saveMatchData('star');
+        saveMatchData('scores');
     });
 });
 

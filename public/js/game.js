@@ -11,7 +11,8 @@ var config = {
                                 If it does not exists, then Phaser will create
                                 a <canvas> element for us. */
     width: 800,
-    height: 600,
+    //height: 600,
+    height: 550,
     physics: {
         default: 'arcade',
         arcade: {
@@ -118,15 +119,21 @@ function update() {
     // Runs once per frame for the duration of the scene
 
     if (this.ship){
+        //console.log(new Date());
         //handle rotation
         if (this.cursors.left.isDown) this.ship.setAngularVelocity(-150);
         else if (this.cursors.right.isDown) this.ship.setAngularVelocity(150);
         else this.ship.setAngularVelocity(0);
 
         //handle acceleration
+        /*if (this.cursors.up.isDown){
+            this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
+        } else this.ship.setAcceleration(0);*/
+
+        //FOR LOAD TESTING, SIMULATE MOVEMENT (can be override any time by user...)
         if (this.cursors.up.isDown){
             this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
-        } else this.ship.setAcceleration(0);
+        } else this.physics.velocityFromRotation(this.ship.rotation + 1.5, 10, this.ship.body.acceleration);
 
         this.physics.world.wrap(this.ship, 5); /*If the ship goes off screen we
         want it to appear on the other side of the screen with an offset. */

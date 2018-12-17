@@ -11,6 +11,7 @@
         <script src="js/game.js"></script>
 
         <p id="message"></p>
+        <button type="button" id="saveBtn">Save to DB</button>
 
         <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
         <script>
@@ -21,6 +22,10 @@
                 console.log(data); //TESTING
                 
                 $('#message').text(data);
+            });
+
+            $('#saveBtn').on('click', function(){
+                socket.emit('saveToDB');
             });
         });
         </script>
