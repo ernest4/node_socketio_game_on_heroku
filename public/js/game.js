@@ -112,6 +112,11 @@ function create() {
             this.socket.emit('starCollected');
         }, null, self);
     });
+
+    //DEBUG
+    this.socket.on('serverHardware', function(serverHardware){
+        console.log(serverHardware);
+    });
 }
 
 
@@ -134,6 +139,11 @@ function update() {
         if (this.cursors.up.isDown){
             this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
         } else this.physics.velocityFromRotation(this.ship.rotation + 1.5, 10, this.ship.body.acceleration);
+
+        //DEBUGGING server hardware
+        if (this.cursors.down.isDown) {
+            this.socket.emit('serverHardware');
+        }
 
         this.physics.world.wrap(this.ship, 5); /*If the ship goes off screen we
         want it to appear on the other side of the screen with an offset. */

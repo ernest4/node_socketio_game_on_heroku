@@ -3,6 +3,8 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 
+const numCPUs = require('os').cpus().length;
+
 var AWS = require('aws-sdk');
 
 AWS.config.update({
@@ -307,6 +309,11 @@ io.on('connection', function (socket){
 
         saveMatchData('star');
         saveMatchData('scores');
+    });
+
+    //DEBUG
+    socket.on('serverHardware', function(){
+        socket.emit('serverHardware', { numCPUs: numCPUs });
     });
 });
 

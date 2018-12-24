@@ -7,7 +7,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "start": "node serverGG.js"
+        "start": "node --nouse-idle-notification --expose-gc server.js"
     },
     "keywords": [],
     "author": "",
