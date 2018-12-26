@@ -1,3 +1,5 @@
+/* Copyright 2018 Ernestas Monkevicius */
+
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
