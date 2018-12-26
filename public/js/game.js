@@ -112,11 +112,6 @@ function create() {
             this.socket.emit('starCollected');
         }, null, self);
     });
-
-    //DEBUG
-    this.socket.on('serverHardware', function(serverHardware){
-        console.log(serverHardware);
-    });
 }
 
 

@@ -3,7 +3,7 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 
-const numCPUs = require('os').cpus().length;
+const numCPUs = require('os').cpus().length; //single threaded for now, potential to utilize more cores in future...
 
 var AWS = require('aws-sdk');
 
