@@ -1,3 +1,5 @@
+/* Copyright 2018 Ernestas Monkevicius */
+
 var config = {
     type: Phaser.AUTO, /* Set the renderer type for our game. The two main
                         types are Canvas and WebGL. WebGL is a faster
