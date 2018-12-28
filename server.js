@@ -120,12 +120,14 @@ function getMatchData(matchItem, socket){
             console.log(`GetItem succeeded: ${JSON.stringify(data, null, 2)}`);
             //console.log(`Got matchData: ${data.Item.info}`);
             if (matchItem === "star"){
-                socket.emit('starLocation', data.Item.info); //update player
+                //socket.emit('starLocation', data.Item.info); //update player
+                socket.emit(eventMSG.star.location, data.Item.info); //update player
                 star = (star == null) ? data.Item.info : star; //update global state (if it's the first time)
                 //console.log("STAR::"+data.Item.info);
                 //NOTE: (... == null) will catch both null and undefined in one test!
             } else {
-                socket.emit('scoreUpdate', data.Item.info);
+                //socket.emit('scoreUpdate', data.Item.info);
+                socket.emit(eventMSG.score.update, data.Item.info);
                 scores = (scores == null) ? data.Item.info : scores; //update global state (if it's the first time)
             }
         }
@@ -223,6 +225,23 @@ var scores;
 
 
 var players = {};
+//immutable syntactic message enumeration
+const eventMSG = Object.freeze({
+    player: Object.freeze({
+        list: "1",
+        new: "2",
+        disconnect: "3",
+        movement: "4",
+        moved: "5"
+    }),
+    star: Object.freeze({
+        location: "6",
+        collected: "7"
+    }),
+    score: Object.freeze({
+        update: "8"
+    })
+});
 
 const PORT = process.env.PORT || 3000;
 
@@ -235,6 +254,31 @@ app.get('/', function(req, res){
 io.on('connection', function (socket){
     console.log(`a user connected: ${socket.id}`); //DEBUGGING
 
+    //----------TESTING
+    const binaryMessage = Buffer.allocUnsafe(4); //4 bytes with cruft
+    binaryMessage.writeUInt16BE(35, 0);
+    binaryMessage.writeUInt16BE(3000, 2);
+    //binaryMessage.writeUInt16BE(56, 0); //overwrite...
+    //(send data...)
+    //(recieve data...)
+    console.log(binaryMessage);
+    console.log(binaryMessage.readUInt16BE(0)); // => 35
+    console.log(binaryMessage.readUInt16BE(2)); // => 3000
+    //----------TESTING
+
+    //suggestion for below players movement info binary conversion.
+    //send raw binary for the position stuff below in the form
+    //players[socket.id] = 0xaabbccddee123456789abcdef123456...
+    //format:
+    //players[socket.id] = rotation8B , x16B , y16B, id20B, team1B
+    // --> estimate reduction from 77 bytes object to 27 bytes binary (65% reduction in data)
+
+    //also shorten event name string from "playerMovement" to single byte number e.g. 1,
+    //for semantic reasons create a variabe name playerMovement
+    //i.e. var playerMovement = 1;
+    //....socket.on(playerMovement, fun...)
+    //thus we preserve the semantics, but only send 1 byte!
+
     //create a new player and add it to the player object
     players[socket.id] = {
         rotation: 0,
@@ -244,9 +288,17 @@ io.on('connection', function (socket){
         team: (Math.floor(Math.random() * 2) === 0) ? 'red' : 'blue'
     }
 
+
+
+
+
+
+
     //Update the new player of the current game state...
     //send the players objects to new player
-    socket.emit('currentPlayers', players);
+    //socket.emit('currentPlayers', players);
+    socket.emit(eventMSG.player.list, players);
+    
 
     //send the star object to the new player
     //socket.emit('starLocation', star);
@@ -257,7 +309,8 @@ io.on('connection', function (socket){
     getMatchData("scores", socket);
 
     //update all other players of the new player
-    socket.broadcast.emit('newPlayer', players[socket.id]);
+    //socket.broadcast.emit('newPlayer', players[socket.id]);
+    socket.broadcast.emit(eventMSG.player.new, players[socket.id]);
 
 
     socket.on('disconnect', function(){
@@ -267,7 +320,8 @@ io.on('connection', function (socket){
         delete players[socket.id];
 
         //emit a message to all other players to remove this player
-        io.emit('disconnect', socket.id);
+        //io.emit('disconnect', socket.id);
+        io.emit(eventMSG.player.disconnect, socket.id);
     });
 
 
@@ -275,7 +329,7 @@ io.on('connection', function (socket){
     player’s information that is stored on the server, emit a new event called 
     playerMoved to all other players, and in this event we pass the updated
     player’s information. */
-    socket.on('playerMovement', function(movementData){
+    socket.on(eventMSG.player.movement, function(movementData){
         players[socket.id].x = movementData.x;
         players[socket.id].y = movementData.y;
         players[socket.id].rotation = movementData.rotation;
@@ -286,12 +340,14 @@ io.on('connection', function (socket){
 
         /*volatile messages should be faster as they dont require confirmation 
         (but then they may not reach the sender)*/
-        socket.volatile.broadcast.emit('playerMoved', players[socket.id]);
+        //socket.volatile.broadcast.emit('playerMoved', players[socket.id]);
+        socket.volatile.broadcast.emit(eventMSG.player.moved, players[socket.id]);
     });
 
     /*update the correct team’s score, generate a new location for the star, 
     and let each player know about the updated scores and the stars new location.*/
-    socket.on('starCollected', function(){
+    //socket.on('starCollected', function(){
+    socket.on(eventMSG.star.collected, function(){
         if (players[socket.id].team === 'red') scores.red += 10;
         else scores.blue += 10;
 
@@ -299,8 +355,10 @@ io.on('connection', function (socket){
         star.y = Math.floor(Math.random() * 500) + 50;
 
         //broadcast
-        io.emit('starLocation', star);
-        io.emit('scoreUpdate', scores);
+        //io.emit('starLocation', star);
+        io.emit(eventMSG.star.location, star);
+        //io.emit('scoreUpdate', scores);
+        io.emit(eventMSG.score.update, scores);
     });
 
     //for testing...
