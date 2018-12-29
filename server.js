@@ -336,13 +336,13 @@ io.on('connection', function (socket){
 
         //console.log(movementData); //TESTING
 
-        /*var binaryBlob = players[socket.id];
-        binaryBlob.writeUInt16BE(movementData.readUInt16BE(0), 0); //rotation
+        var binaryBlob = players[socket.id];
+        binaryBlob.writeInt16BE(movementData.readInt16BE(0), 0); //rotation
         binaryBlob.writeUInt16BE(movementData.readUInt16BE(2), 2); //x
-        binaryBlob.writeUInt16BE(movementData.readUInt16BE(4), 4); //y*/
-        players[socket.id].writeInt16BE(movementData.readInt16BE(0), 0); //rotation
+        binaryBlob.writeUInt16BE(movementData.readUInt16BE(4), 4); //y
+        /*players[socket.id].writeInt16BE(movementData.readInt16BE(0), 0); //rotation
         players[socket.id].writeUInt16BE(movementData.readUInt16BE(2), 2); //x
-        players[socket.id].writeUInt16BE(movementData.readUInt16BE(4), 4); //y
+        players[socket.id].writeUInt16BE(movementData.readUInt16BE(4), 4); //y*/
 
 
         //emit message to all players about the player that moved
