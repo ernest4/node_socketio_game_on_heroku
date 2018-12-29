@@ -111,8 +111,8 @@ function create() {
             //if (otherPlayer.playerId === playerInfo.playerId){
             if (otherPlayer.playerId === binaryToString(playerInfo, 7, 27)){
 
-                console.log("Rotation in moved::");
-                console.log(playerInfoView.getInt16(0)/100);
+                //console.log("Rotation in moved::");
+                //console.log(playerInfoView.getInt16(0)/100);
 
                 otherPlayer.setRotation(playerInfoView.getInt16(0)/100);
                 otherPlayer.setPosition(playerInfoView.getUint16(2), playerInfoView.getUint16(4));
