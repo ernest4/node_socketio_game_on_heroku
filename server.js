@@ -222,9 +222,45 @@ var scores;
 
 }, 3000);*/
 
+function playerToBinary(playerObject){
+    /*Input:
+    {
+        rotation: 0, //2 bytes
+        x: Math.floor(Math.random() * 700) + 50, //2 bytes
+        y: Math.floor(Math.random() * 500) + 50, //2 bytes
+        team: (Math.floor(Math.random() * 2) === 0) ? 1 : 2 //1 byte (red : blue)
+        playerId: socket.id, //20 bytes
+    } 
+
+    => total 2 + 2 + 2 + 20 + 1 = 27 bytes
+    */
+
+   /*const binaryMessage = Buffer.allocUnsafe(6); //4 bytes with cruft
+   binaryMessage.writeUInt16BE(35, 0);
+   //binaryMessage.writeUInt16BE(56, 0); //overwrite...
+   binaryMessage.write("ha", 2);
+   binaryMessage.writeUInt16BE(3000, 4);
+   //(send data...)
+   //(recieve data...)
+   console.log(binaryMessage);
+   console.log(binaryMessage.readUInt16BE(0)); // => 35
+   console.log(binaryMessage.toString('ascii', 2, 4)); // => "ha"
+   console.log(binaryMessage.readUInt16BE(4)); // => 3000*/
+
+    var binaryBlob = Buffer.allocUnsafe(27); //27 bytes with cruft
+
+    binaryBlob.writeUInt16BE(playerObject.rotation, 0);
+    binaryBlob.writeUInt16BE(playerObject.x, 2);
+    binaryBlob.writeUInt16BE(playerObject.y, 4);
+    binaryBlob.writeUInt8(playerObject.team, 6);
+    binaryBlob.write(playerObject.playerId, 7);
+
+    return binaryBlob;
+}
 
 
 var players = {};
+var playerCount = 0;
 //immutable syntactic message enumeration
 const eventMSG = Object.freeze({
     player: Object.freeze({
@@ -253,63 +289,27 @@ app.get('/', function(req, res){
 
 io.on('connection', function (socket){
     console.log(`a user connected: ${socket.id}`); //DEBUGGING
+    playerCount++;
 
-    //----------TESTING
-    const binaryMessage = Buffer.allocUnsafe(4); //4 bytes with cruft
-    binaryMessage.writeUInt16BE(35, 0);
-    binaryMessage.writeUInt16BE(3000, 2);
-    //binaryMessage.writeUInt16BE(56, 0); //overwrite...
-    //(send data...)
-    //(recieve data...)
-    console.log(binaryMessage);
-    console.log(binaryMessage.readUInt16BE(0)); // => 35
-    console.log(binaryMessage.readUInt16BE(2)); // => 3000
-    //----------TESTING
-
-    //suggestion for below players movement info binary conversion.
-    //send raw binary for the position stuff below in the form
-    //players[socket.id] = 0xaabbccddee123456789abcdef123456...
-    //format:
-    //players[socket.id] = rotation8B , x16B , y16B, id20B, team1B
-    // --> estimate reduction from 77 bytes object to 27 bytes binary (65% reduction in data)
-
-    //also shorten event name string from "playerMovement" to single byte number e.g. 1,
-    //for semantic reasons create a variabe name playerMovement
-    //i.e. var playerMovement = 1;
-    //....socket.on(playerMovement, fun...)
-    //thus we preserve the semantics, but only send 1 byte!
-
-    //create a new player and add it to the player object
-    players[socket.id] = {
-        rotation: 0,
-        x: Math.floor(Math.random() * 700) + 50,
-        y: Math.floor(Math.random() * 500) + 50,
-        playerId: socket.id,
-        team: (Math.floor(Math.random() * 2) === 0) ? 'red' : 'blue'
-    }
-
-
-
-
-
-
+    players[socket.id] = playerToBinary({
+                            rotation: 0,
+                            x: Math.floor(Math.random() * 700) + 50,
+                            y: Math.floor(Math.random() * 500) + 50,
+                            team: (Math.floor(Math.random() * 2) === 0) ? 1 : 2,
+                            playerId: socket.id
+                        });
 
     //Update the new player of the current game state...
     //send the players objects to new player
-    //socket.emit('currentPlayers', players);
     socket.emit(eventMSG.player.list, players);
     
-
     //send the star object to the new player
-    //socket.emit('starLocation', star);
     getMatchData("star", socket);
 
     //send the current scores
-    //socket.emit('scoreUpdate', scores);
     getMatchData("scores", socket);
 
     //update all other players of the new player
-    //socket.broadcast.emit('newPlayer', players[socket.id]);
     socket.broadcast.emit(eventMSG.player.new, players[socket.id]);
 
 
@@ -320,7 +320,7 @@ io.on('connection', function (socket){
         delete players[socket.id];
 
         //emit a message to all other players to remove this player
-        //io.emit('disconnect', socket.id);
+        playerCount--;
         io.emit(eventMSG.player.disconnect, socket.id);
     });
 
@@ -330,9 +330,19 @@ io.on('connection', function (socket){
     playerMoved to all other players, and in this event we pass the updated
     player’s information. */
     socket.on(eventMSG.player.movement, function(movementData){
-        players[socket.id].x = movementData.x;
-        players[socket.id].y = movementData.y;
-        players[socket.id].rotation = movementData.rotation;
+        /*players[socket.id].rotation = movementData.rotation; //rotation
+        players[socket.id].x = movementData.x; //x
+        players[socket.id].y = movementData.y; //y*/
+
+        //console.log(movementData); //TESTING
+
+        /*var binaryBlob = players[socket.id];
+        binaryBlob.writeUInt16BE(movementData.readUInt16BE(0), 0); //rotation
+        binaryBlob.writeUInt16BE(movementData.readUInt16BE(2), 2); //x
+        binaryBlob.writeUInt16BE(movementData.readUInt16BE(4), 4); //y*/
+        players[socket.id].writeInt16BE(movementData.readInt16BE(0), 0); //rotation
+        players[socket.id].writeUInt16BE(movementData.readUInt16BE(2), 2); //x
+        players[socket.id].writeUInt16BE(movementData.readUInt16BE(4), 4); //y
 
 
         //emit message to all players about the player that moved
@@ -348,7 +358,8 @@ io.on('connection', function (socket){
     and let each player know about the updated scores and the stars new location.*/
     //socket.on('starCollected', function(){
     socket.on(eventMSG.star.collected, function(){
-        if (players[socket.id].team === 'red') scores.red += 10;
+        //check which team the player is on and update score accordingly
+        if (players[socket.id].readUInt8(6) === 1) scores.red += 10;
         else scores.blue += 10;
 
         star.x = Math.floor(Math.random() * 700) + 50;
