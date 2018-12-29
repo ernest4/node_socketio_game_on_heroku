@@ -210,8 +210,8 @@ function movementToBinary(movementObject){
     binaryBlob.writeUInt16BE(movementObject.x, 2);
     binaryBlob.writeUInt16BE(movementObject.y, 4);*/
 
-    console.log("Rotation in movementToBinary::");
-    console.log(movementObject.rotation);
+    //console.log("Rotation in movementToBinary::");
+    //console.log(movementObject.rotation);
 
     movementBinaryBlobView.setInt16(0, movementObject.rotation*100);
     movementBinaryBlobView.setUint16(2, movementObject.x);
