@@ -235,18 +235,6 @@ function playerToBinary(playerObject){
     => total 2 + 2 + 2 + 20 + 1 = 27 bytes
     */
 
-   /*const binaryMessage = Buffer.allocUnsafe(6); //4 bytes with cruft
-   binaryMessage.writeUInt16BE(35, 0);
-   //binaryMessage.writeUInt16BE(56, 0); //overwrite...
-   binaryMessage.write("ha", 2);
-   binaryMessage.writeUInt16BE(3000, 4);
-   //(send data...)
-   //(recieve data...)
-   console.log(binaryMessage);
-   console.log(binaryMessage.readUInt16BE(0)); // => 35
-   console.log(binaryMessage.toString('ascii', 2, 4)); // => "ha"
-   console.log(binaryMessage.readUInt16BE(4)); // => 3000*/
-
     var binaryBlob = Buffer.allocUnsafe(27); //27 bytes with cruft
 
     binaryBlob.writeUInt16BE(playerObject.rotation, 0);
