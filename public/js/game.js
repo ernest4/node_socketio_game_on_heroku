@@ -78,8 +78,9 @@ function create() {
         Object.keys(players).forEach(function(id){
             //if the player is this player, add it to the game...
             //if (players[id].playerId === self.socket.id){
+            if (id === self.socket.id){
             //extract the string ID
-            if (binaryToString(players[id], 7, 27) === self.socket.id){
+            //if (binaryToString(players[id], 7, 27) === self.socket.id){
                 addPlayer(self, players[id]);
             } else { //...some other player, add it to the 'others' group
                 addOtherPlayers(self, players[id]);
@@ -105,17 +106,20 @@ function create() {
         /*Find the player that moved in the stored array of ther players and
         update it's position and rotation */
 
-        var playerInfoView = new DataView(playerInfo);
+        //var playerInfoView = new DataView(playerInfo);
+        console.log('Player Moved');
 
         self.otherPlayers.children.getArray().forEach(function(otherPlayer){
-            //if (otherPlayer.playerId === playerInfo.playerId){
-            if (otherPlayer.playerId === binaryToString(playerInfo, 7, 27)){
+            if (otherPlayer.playerId === playerInfo.playerId){
+            //if (otherPlayer.playerId === binaryToString(playerInfo, 7, 27)){
 
                 //console.log("Rotation in moved::");
                 //console.log(playerInfoView.getInt16(0)/100);
 
-                otherPlayer.setRotation(playerInfoView.getInt16(0)/100);
-                otherPlayer.setPosition(playerInfoView.getUint16(2), playerInfoView.getUint16(4));
+                /*otherPlayer.setRotation(playerInfoView.getInt16(0)/100);
+                otherPlayer.setPosition(playerInfoView.getUint16(2), playerInfoView.getUint16(4));*/
+                otherPlayer.setRotation(playerInfo.rotation);
+                otherPlayer.setPosition(playerInfo.x, playerInfo.y);
             }
         });
     });
@@ -123,6 +127,18 @@ function create() {
     this.cursors = this.input.keyboard.createCursorKeys(); /*This will populate
     the cursors object with our four main Key objects (up, down, left, and 
     right), which will bind to those arrows on the keyboard.  */
+
+    //----TESTING
+    //this.input.keyboard.on('keyup_' + 'P', function(event){
+    this.input.keyboard.on('keyup_' + 'P', event => {
+        console.log("You pressed P!");
+    });
+
+    this.socket.on('testResponse', function(data){
+        console.log(data.val)
+    });
+    //----TESTING
+
 
     this.blueScoreText = this.add.text(16, 16, '', {fontSize: '32px', fill: '#11bbFF'});
     this.redScoreText = this.add.text(584, 16, '', {fontSize: '32px', fill: '#FF0000'});
@@ -148,8 +164,10 @@ function create() {
 }
 
 
-function update() {
+function update(time, delta) {
     // Runs once per frame for the duration of the scene
+
+    //console.log(`time: ${time}, delta: ${delta}`);
 
     if (this.ship){
         //console.log(new Date());
@@ -182,7 +200,8 @@ function update() {
         var y = this.ship.y;
         var r = this.ship.rotation;
         if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)){
-            this.socket.emit(eventMSG.player.movement, movementToBinary({ x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation}));
+            //this.socket.emit(eventMSG.player.movement, movementToBinary({ x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation}));
+            this.socket.emit(eventMSG.player.movement, { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation});
         }
 
         //save old position data
@@ -223,16 +242,17 @@ function movementToBinary(movementObject){
 function addPlayer(self, playerInfo){
     /*usign self.physics.add.image instead of self.add.image so the ship can
     use the arcade physics.*/
-    var playerDataView = new DataView(playerInfo);
+    //var playerDataView = new DataView(playerInfo);
 
-    self.ship = self.physics.add.image(playerDataView.getUint16(2), playerDataView.getUint16(4), 'ship')
+    self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship')
                                     .setOrigin(0.5, 0.5) /*default is top left,
                                                         this affects rotation.*/
                                     .setDisplaySize(53, 40); /*Scale down the
                                     original 106×80 px image proportionately. */
     
     //set color based on team
-    if (playerDataView.getUint8(6) === 2) self.ship.setTint(0x0000ff);
+    //if (playerDataView.getUint8(6) === 2) self.ship.setTint(0x0000ff);
+    if (playerInfo.team === 2) self.ship.setTint(0x0000ff);
     else self.ship.setTint(0xff0000);
 
     //arcade physics settings
@@ -242,16 +262,18 @@ function addPlayer(self, playerInfo){
 }
 
 function addOtherPlayers(self, playerInfo){
-    var playerDataView = new DataView(playerInfo);
+    //var playerDataView = new DataView(playerInfo);
 
-    const otherPlayer = self.add.sprite(playerDataView.getUint16(2), playerDataView.getUint16(4), 'otherPlayer')
+    const otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'otherPlayer')
                                     .setOrigin(0.5, 0.5)
                                     .setDisplaySize(53, 40);
 
-    if (playerDataView.getUint8(6) === 2) otherPlayer.setTint(0x0000ff);
+    //if (playerDataView.getUint8(6) === 2) otherPlayer.setTint(0x0000ff);
+    if (playerInfo.team === 2) otherPlayer.setTint(0x0000ff);
     else otherPlayer.setTint(0xff0000);
 
-    otherPlayer.playerId = binaryToString(playerInfo, 7, 27); //playerInfo.toString('ascii', 7, 27);
+    //otherPlayer.playerId = binaryToString(playerInfo, 7, 27); //playerInfo.toString('ascii', 7, 27);
+    otherPlayer.playerId = playerInfo.playerId;
     self.otherPlayers.add(otherPlayer);
 }
 

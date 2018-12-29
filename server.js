@@ -279,13 +279,19 @@ io.on('connection', function (socket){
     console.log(`a user connected: ${socket.id}`); //DEBUGGING
     playerCount++;
 
-    players[socket.id] = playerToBinary({
+    /*players[socket.id] = playerToBinary({
                             rotation: 0,
                             x: Math.floor(Math.random() * 700) + 50,
                             y: Math.floor(Math.random() * 500) + 50,
                             team: (Math.floor(Math.random() * 2) === 0) ? 1 : 2,
                             playerId: socket.id
-                        });
+                        });*/
+    players[socket.id] = {  rotation: 0,
+                            x: Math.floor(Math.random() * 700) + 50,
+                            y: Math.floor(Math.random() * 500) + 50,
+                            team: (Math.floor(Math.random() * 2) === 0) ? 1 : 2,
+                            playerId: socket.id 
+                        };
 
     //Update the new player of the current game state...
     //send the players objects to new player
@@ -324,13 +330,15 @@ io.on('connection', function (socket){
 
         //console.log(movementData); //TESTING
 
-        var binaryBlob = players[socket.id];
+        /*var binaryBlob = players[socket.id];
         binaryBlob.writeInt16BE(movementData.readInt16BE(0), 0); //rotation
         binaryBlob.writeUInt16BE(movementData.readUInt16BE(2), 2); //x
-        binaryBlob.writeUInt16BE(movementData.readUInt16BE(4), 4); //y
-        /*players[socket.id].writeInt16BE(movementData.readInt16BE(0), 0); //rotation
-        players[socket.id].writeUInt16BE(movementData.readUInt16BE(2), 2); //x
-        players[socket.id].writeUInt16BE(movementData.readUInt16BE(4), 4); //y*/
+        binaryBlob.writeUInt16BE(movementData.readUInt16BE(4), 4); //y*/
+        
+        var player = players[socket.id];
+        player.rotation = movementData.rotation; //rotation
+        player.x = movementData.x; //x
+        player.y = movementData.y; //y
 
 
         //emit message to all players about the player that moved
@@ -347,7 +355,8 @@ io.on('connection', function (socket){
     //socket.on('starCollected', function(){
     socket.on(eventMSG.star.collected, function(){
         //check which team the player is on and update score accordingly
-        if (players[socket.id].readUInt8(6) === 1) scores.red += 10;
+        //if (players[socket.id].readUInt8(6) === 1) scores.red += 10;
+        if (players[socket.id].team === 1) scores.red += 10;
         else scores.blue += 10;
 
         star.x = Math.floor(Math.random() * 700) + 50;
