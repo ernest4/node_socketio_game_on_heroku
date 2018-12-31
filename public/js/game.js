@@ -108,7 +108,7 @@ function create() {
         update it's position and rotation */
 
         //var playerInfoView = new DataView(playerInfo);
-        console.log('Player Moved');
+        //console.log('Player Moved');
 
         self.otherPlayers.children.getArray().forEach(function(otherPlayer){
             if (otherPlayer.playerId === playerInfo.playerId){
