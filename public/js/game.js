@@ -55,6 +55,7 @@ function preload() {
     this.load.image('star', 'assets/star_gold.png');
 }
 
+var players = {}; //global secondary index of all players
 
 function create() {
     // Runs once, after all assets in preload are loaded
@@ -275,6 +276,9 @@ function addOtherPlayers(self, playerInfo){
     //otherPlayer.playerId = binaryToString(playerInfo, 7, 27); //playerInfo.toString('ascii', 7, 27);
     otherPlayer.playerId = playerInfo.playerId;
     self.otherPlayers.add(otherPlayer);
+
+    //update secondary index
+    players[otherPlayer.playerId] = otherPlayer;
 }
 
 function binaryToString(binaryData, from, to){
