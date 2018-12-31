@@ -110,19 +110,24 @@ function create() {
         //var playerInfoView = new DataView(playerInfo);
         //console.log('Player Moved');
 
-        self.otherPlayers.children.getArray().forEach(function(otherPlayer){
+        /*self.otherPlayers.children.getArray().forEach(function(otherPlayer){
             if (otherPlayer.playerId === playerInfo.playerId){
             //if (otherPlayer.playerId === binaryToString(playerInfo, 7, 27)){
 
                 //console.log("Rotation in moved::");
                 //console.log(playerInfoView.getInt16(0)/100);
 
-                /*otherPlayer.setRotation(playerInfoView.getInt16(0)/100);
-                otherPlayer.setPosition(playerInfoView.getUint16(2), playerInfoView.getUint16(4));*/
+                //otherPlayer.setRotation(playerInfoView.getInt16(0)/100);
+                //otherPlayer.setPosition(playerInfoView.getUint16(2), playerInfoView.getUint16(4));
                 otherPlayer.setRotation(playerInfo.rotation);
                 otherPlayer.setPosition(playerInfo.x, playerInfo.y);
             }
-        });
+        });*/
+        
+        var otherPlayer = players[playerInfo.playerId];
+
+        otherPlayer.setRotation(playerInfo.rotation);
+        otherPlayer.setPosition(playerInfo.x, playerInfo.y);
     });
 
     this.cursors = this.input.keyboard.createCursorKeys(); /*This will populate
@@ -130,9 +135,15 @@ function create() {
     right), which will bind to those arrows on the keyboard.  */
 
     //----TESTING
+    this.keyMap = {};
     //this.input.keyboard.on('keyup_' + 'P', function(event){
     this.input.keyboard.on('keyup_' + 'P', event => {
         console.log("You pressed P!");
+    });
+
+    this.input.keyboard.on('keydown_' + 'UP', event =>{
+        //console.log('up pressed');
+        this.keyMap.UP = true;
     });
 
     this.socket.on('testResponse', function(data){
@@ -165,10 +176,10 @@ function create() {
 }
 
 
-function update(time, delta) {
+function update(time, deltaTime) {
     // Runs once per frame for the duration of the scene
 
-    //console.log(`time: ${time}, delta: ${delta}`);
+    //console.log(`time: ${time}, delta: ${deltaTime}`);
 
     if (this.ship){
         //console.log(new Date());
@@ -184,6 +195,8 @@ function update(time, delta) {
 
         //FOR LOAD TESTING, SIMULATE MOVEMENT (can be override any time by user...)
         if (this.cursors.up.isDown){
+        //if (this.keyMap.UP){
+        //    this.keyMap.UP = false; //handle the input, stop if from propagating any further
             this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
         } else this.physics.velocityFromRotation(this.ship.rotation + 1.5, 10, this.ship.body.acceleration);
 
