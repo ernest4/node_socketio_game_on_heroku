@@ -15,7 +15,6 @@
     "license": "ISC",
     "dependencies": {
         "aws-sdk": "^2.376.0",
-        "bufferutil": "^4.0.1",
         "express": "^4.15.3",
         "node-gyp": "^3.8.0",
         "node-gyp-build": "^3.7.0",
