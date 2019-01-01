@@ -19,17 +19,69 @@
         <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
         <script>
         $(function () {
-            var socket = io();
+            // var socket = io();
 
-            socket.on('savedToDB', function(data){
-                console.log(data); //TESTING
+            // socket.on('savedToDB', function(data){
+            //     console.log(data); //TESTING
                 
-                $('#message').text(data);
-            });
+            //     $('#message').text(data);
+            // });
 
-            $('#saveBtn').on('click', function(){
-                socket.emit('saveToDB');
-            });
+            // $('#saveBtn').on('click', function(){
+            //     socket.emit('saveToDB');
+            // });
+
+            //var socket = new WebSocket('wss://echo.websocket.org');
+            var HOST = location.origin.replace(/^http/, 'ws');
+            var socket = new WebSocket(HOST);
+
+            socket.onopen = function(event) {
+                console.log(`Connection established`);
+
+                socket.send('Client says hi');
+
+                //socket.close();
+            };
+
+            socket.onmessage = function(event){
+                console.log(`response: ${event.data}`);
+
+                // if(typeOf (event.data) === String ){
+                //     //create a JSON object
+                //     var jsonObject = JSON.parse(event.data);
+                //     var username = jsonObject.name;
+                //     var message = jsonObject.message;
+                        
+                //     console.log('Received data string');
+                // }
+
+                // if(event.data instanceof ArrayBuffer ){
+                //     var buffer = event.data;
+                //     console.log('Received arraybuffer');
+                // }
+            };
+
+            socket.onclose = function (event) {
+            // Connection closed.
+            // Firstly, check the reason.
+                
+                if (event.code != 1000) {
+                    // Error code 1000 means that the connection was closed normally.
+
+                    // Try to reconnect code here....
+                        
+                    if (!navigator.onLine) {
+                        console.log("You are offline. Please connect to the Internet and try again.");
+                    }
+                }
+                
+                console.log('Connection closed.');
+            };
+
+            socket.onerror = function(event) {
+                console.log(event);
+                console.log(`got error: ${event}`);
+            };
         });
         </script>
     </body>

@@ -3,7 +3,7 @@
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
-var io = require('socket.io').listen(server);
+//var io = require('socket.io').listen(server);
 
 const numCPUs = require('os').cpus().length; //single threaded for now, potential to utilize more cores in future...
 
@@ -275,115 +275,158 @@ app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
 });
 
-io.on('connection', function (socket){
-    console.log(`a user connected: ${socket.id}`); //DEBUGGING
-    playerCount++;
 
-    /*players[socket.id] = playerToBinary({
-                            rotation: 0,
-                            x: Math.floor(Math.random() * 700) + 50,
-                            y: Math.floor(Math.random() * 500) + 50,
-                            team: (Math.floor(Math.random() * 2) === 0) ? 1 : 2,
-                            playerId: socket.id
-                        });*/
-    players[socket.id] = {  rotation: 0,
-                            x: Math.floor(Math.random() * 700) + 50,
-                            y: Math.floor(Math.random() * 500) + 50,
-                            team: (Math.floor(Math.random() * 2) === 0) ? 1 : 2,
-                            playerId: socket.id 
-                        };
+// io.on('connection', function (socket){
+//     console.log(`a user connected: ${socket.id}`); //DEBUGGING
+//     playerCount++;
 
-    //Update the new player of the current game state...
-    //send the players objects to new player
-    socket.emit(eventMSG.player.list, players);
+//     // players[socket.id] = playerToBinary({
+//     //                         rotation: 0,
+//     //                         x: Math.floor(Math.random() * 700) + 50,
+//     //                         y: Math.floor(Math.random() * 500) + 50,
+//     //                         team: (Math.floor(Math.random() * 2) === 0) ? 1 : 2,
+//     //                         playerId: socket.id
+//     //                     });
+//     players[socket.id] = {  rotation: 0,
+//                             x: Math.floor(Math.random() * 700) + 50,
+//                             y: Math.floor(Math.random() * 500) + 50,
+//                             team: (Math.floor(Math.random() * 2) === 0) ? 1 : 2,
+//                             playerId: socket.id 
+//                         };
+
+//     //Update the new player of the current game state...
+//     //send the players objects to new player
+//     socket.emit(eventMSG.player.list, players);
     
-    //send the star object to the new player
-    getMatchData("star", socket);
+//     //send the star object to the new player
+//     getMatchData("star", socket);
 
-    //send the current scores
-    getMatchData("scores", socket);
+//     //send the current scores
+//     getMatchData("scores", socket);
 
-    //update all other players of the new player
-    socket.broadcast.emit(eventMSG.player.new, players[socket.id]);
-
-
-    socket.on('disconnect', function(){
-        console.log(`user disconnected: ${socket.id}`); //DEBUGGING
-
-        //remove this player from the players object
-        delete players[socket.id];
-
-        //emit a message to all other players to remove this player
-        playerCount--;
-        io.emit(eventMSG.player.disconnect, socket.id);
-    });
+//     //update all other players of the new player
+//     socket.broadcast.emit(eventMSG.player.new, players[socket.id]);
 
 
-    /*When the playerMovement event is received on the server, we update that
-    player’s information that is stored on the server, emit a new event called 
-    playerMoved to all other players, and in this event we pass the updated
-    player’s information. */
-    socket.on(eventMSG.player.movement, function(movementData){
-        /*players[socket.id].rotation = movementData.rotation; //rotation
-        players[socket.id].x = movementData.x; //x
-        players[socket.id].y = movementData.y; //y*/
+//     socket.on('disconnect', function(){
+//         console.log(`user disconnected: ${socket.id}`); //DEBUGGING
 
-        //console.log(movementData); //TESTING
+//         //remove this player from the players object
+//         delete players[socket.id];
 
-        /*var binaryBlob = players[socket.id];
-        binaryBlob.writeInt16BE(movementData.readInt16BE(0), 0); //rotation
-        binaryBlob.writeUInt16BE(movementData.readUInt16BE(2), 2); //x
-        binaryBlob.writeUInt16BE(movementData.readUInt16BE(4), 4); //y*/
+//         //emit a message to all other players to remove this player
+//         playerCount--;
+//         io.emit(eventMSG.player.disconnect, socket.id);
+//     });
+
+
+//     /*When the playerMovement event is received on the server, we update that
+//     player’s information that is stored on the server, emit a new event called 
+//     playerMoved to all other players, and in this event we pass the updated
+//     player’s information. */
+//     socket.on(eventMSG.player.movement, function(movementData){
+//         /*players[socket.id].rotation = movementData.rotation; //rotation
+//         players[socket.id].x = movementData.x; //x
+//         players[socket.id].y = movementData.y; //y*/
+
+//         //console.log(movementData); //TESTING
+
+//         /*var binaryBlob = players[socket.id];
+//         binaryBlob.writeInt16BE(movementData.readInt16BE(0), 0); //rotation
+//         binaryBlob.writeUInt16BE(movementData.readUInt16BE(2), 2); //x
+//         binaryBlob.writeUInt16BE(movementData.readUInt16BE(4), 4); //y*/
         
-        var player = players[socket.id];
-        player.rotation = movementData.rotation; //rotation
-        player.x = movementData.x; //x
-        player.y = movementData.y; //y
+//         var player = players[socket.id];
+//         player.rotation = movementData.rotation; //rotation
+//         player.x = movementData.x; //x
+//         player.y = movementData.y; //y
 
 
-        //emit message to all players about the player that moved
-            //socket.broadcast.emit('playerMoved', players[socket.id]);
+//         //emit message to all players about the player that moved
+//             //socket.broadcast.emit('playerMoved', players[socket.id]);
 
-        /*volatile messages should be faster as they dont require confirmation 
-        (but then they may not reach the sender)*/
-        //socket.volatile.broadcast.emit('playerMoved', players[socket.id]);
-        socket.volatile.broadcast.emit(eventMSG.player.moved, players[socket.id]);
+//         /*volatile messages should be faster as they dont require confirmation 
+//         (but then they may not reach the sender)*/
+//         //socket.volatile.broadcast.emit('playerMoved', players[socket.id]);
+//         socket.volatile.broadcast.emit(eventMSG.player.moved, players[socket.id]);
+//     });
+
+//     /*update the correct team’s score, generate a new location for the star, 
+//     and let each player know about the updated scores and the stars new location.*/
+//     //socket.on('starCollected', function(){
+//     socket.on(eventMSG.star.collected, function(){
+//         //check which team the player is on and update score accordingly
+//         //if (players[socket.id].readUInt8(6) === 1) scores.red += 10;
+//         if (players[socket.id].team === 1) scores.red += 10;
+//         else scores.blue += 10;
+
+//         star.x = Math.floor(Math.random() * 700) + 50;
+//         star.y = Math.floor(Math.random() * 500) + 50;
+
+//         //broadcast
+//         //io.emit('starLocation', star);
+//         io.emit(eventMSG.star.location, star);
+//         //io.emit('scoreUpdate', scores);
+//         io.emit(eventMSG.score.update, scores);
+//     });
+
+//     //for testing...
+//     socket.on('saveToDB', function(){
+//         if (star == null || scores == null) return; //not ready for saving yet...
+
+//         io.emit('savedToDB', `Saved the data to database... BLUE: ${scores.blue} RED: ${scores.red} Time: ${new Date().toTimeString()}`);
+
+//         saveMatchData('star');
+//         saveMatchData('scores');
+//     });
+
+//     //DEBUG
+//     socket.on('serverHardware', function(){
+//         socket.emit('serverHardware', { numCPUs: numCPUs });
+//     });
+//});
+
+
+//TESTING
+//var socket = new WebSocket('ws://echo.websocket.org');
+const WebSocket = require('ws');
+const uuidv4 = require('uuid/v4');
+
+//uuidv4(); // => '10ba038e-48da-487b-96e8-8d3b99b6d18a'
+
+const wss = new WebSocket.Server({ server });
+
+//implementing own broadcast
+wss.broadcast = function broadcast(data){
+    wss.clients.forEach(function(client){
+        if(client.readyState === WebSocket.OPEN){
+            client.send(data);
+        }
+    });
+};
+
+wss.on('connection', (ws) => {
+    ws.uuid = uuidv4(); //generate ID for client
+    console.log(`Client Connected: ${ws.uuid}`);
+
+    ws.on('message', function incoming(message){
+        console.log(`Got message: ${message}`);
+
+        // Broadcast to everyone else example...
+        // wss.clients.forEach(function each(client) {
+        //     if (client !== ws && client.readyState === WebSocket.OPEN) {
+        //     client.send(data);
+        //     }
+        // });
     });
 
-    /*update the correct team’s score, generate a new location for the star, 
-    and let each player know about the updated scores and the stars new location.*/
-    //socket.on('starCollected', function(){
-    socket.on(eventMSG.star.collected, function(){
-        //check which team the player is on and update score accordingly
-        //if (players[socket.id].readUInt8(6) === 1) scores.red += 10;
-        if (players[socket.id].team === 1) scores.red += 10;
-        else scores.blue += 10;
+    ws.send('Server says hi!: your id is:'+ws.uuid);
 
-        star.x = Math.floor(Math.random() * 700) + 50;
-        star.y = Math.floor(Math.random() * 500) + 50;
-
-        //broadcast
-        //io.emit('starLocation', star);
-        io.emit(eventMSG.star.location, star);
-        //io.emit('scoreUpdate', scores);
-        io.emit(eventMSG.score.update, scores);
-    });
-
-    //for testing...
-    socket.on('saveToDB', function(){
-        if (star == null || scores == null) return; //not ready for saving yet...
-
-        io.emit('savedToDB', `Saved the data to database... BLUE: ${scores.blue} RED: ${scores.red} Time: ${new Date().toTimeString()}`);
-
-        saveMatchData('star');
-        saveMatchData('scores');
-    });
-
-    //DEBUG
-    socket.on('serverHardware', function(){
-        socket.emit('serverHardware', { numCPUs: numCPUs });
+    ws.on('close', () => {
+        console.log(`Client Disconnected: ${ws.uuid}`);
     });
 });
+
 
 server.listen(PORT, function(){
     console.log(`Listening on ${server.address().port}`);
