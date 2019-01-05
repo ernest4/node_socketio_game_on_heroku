@@ -121,13 +121,13 @@ function getMatchData(matchItem, socket){
             //console.log(`Got matchData: ${data.Item.info}`);
             if (matchItem === "star"){
                 //socket.emit('starLocation', data.Item.info); //update player
-                socket.emit(eventMSG.star.location, data.Item.info); //update player
+                socket.emit(messageType.star.location, data.Item.info); //update player
                 star = (star == null) ? data.Item.info : star; //update global state (if it's the first time)
                 //console.log("STAR::"+data.Item.info);
                 //NOTE: (... == null) will catch both null and undefined in one test!
             } else {
                 //socket.emit('scoreUpdate', data.Item.info);
-                socket.emit(eventMSG.score.update, data.Item.info);
+                socket.emit(messageType.score.update, data.Item.info);
                 scores = (scores == null) ? data.Item.info : scores; //update global state (if it's the first time)
             }
         }
@@ -250,7 +250,7 @@ function playerToBinary(playerObject){
 var players = {};
 var playerCount = 0;
 //immutable syntactic message enumeration
-const eventMSG = Object.freeze({
+const messageType = Object.freeze({
     player: Object.freeze({
         list: "1",
         new: "2",
@@ -296,7 +296,7 @@ app.get('/', function(req, res){
 
 //     //Update the new player of the current game state...
 //     //send the players objects to new player
-//     socket.emit(eventMSG.player.list, players);
+//     socket.emit(messageType.player.list, players);
     
 //     //send the star object to the new player
 //     getMatchData("star", socket);
@@ -305,7 +305,7 @@ app.get('/', function(req, res){
 //     getMatchData("scores", socket);
 
 //     //update all other players of the new player
-//     socket.broadcast.emit(eventMSG.player.new, players[socket.id]);
+//     socket.broadcast.emit(messageType.player.new, players[socket.id]);
 
 
 //     socket.on('disconnect', function(){
@@ -316,7 +316,7 @@ app.get('/', function(req, res){
 
 //         //emit a message to all other players to remove this player
 //         playerCount--;
-//         io.emit(eventMSG.player.disconnect, socket.id);
+//         io.emit(messageType.player.disconnect, socket.id);
 //     });
 
 
@@ -324,7 +324,7 @@ app.get('/', function(req, res){
 //     player’s information that is stored on the server, emit a new event called 
 //     playerMoved to all other players, and in this event we pass the updated
 //     player’s information. */
-//     socket.on(eventMSG.player.movement, function(movementData){
+//     socket.on(messageType.player.movement, function(movementData){
 //         /*players[socket.id].rotation = movementData.rotation; //rotation
 //         players[socket.id].x = movementData.x; //x
 //         players[socket.id].y = movementData.y; //y*/
@@ -348,13 +348,13 @@ app.get('/', function(req, res){
 //         /*volatile messages should be faster as they dont require confirmation 
 //         (but then they may not reach the sender)*/
 //         //socket.volatile.broadcast.emit('playerMoved', players[socket.id]);
-//         socket.volatile.broadcast.emit(eventMSG.player.moved, players[socket.id]);
+//         socket.volatile.broadcast.emit(messageType.player.moved, players[socket.id]);
 //     });
 
 //     /*update the correct team’s score, generate a new location for the star, 
 //     and let each player know about the updated scores and the stars new location.*/
 //     //socket.on('starCollected', function(){
-//     socket.on(eventMSG.star.collected, function(){
+//     socket.on(messageType.star.collected, function(){
 //         //check which team the player is on and update score accordingly
 //         //if (players[socket.id].readUInt8(6) === 1) scores.red += 10;
 //         if (players[socket.id].team === 1) scores.red += 10;
@@ -365,9 +365,9 @@ app.get('/', function(req, res){
 
 //         //broadcast
 //         //io.emit('starLocation', star);
-//         io.emit(eventMSG.star.location, star);
+//         io.emit(messageType.star.location, star);
 //         //io.emit('scoreUpdate', scores);
-//         io.emit(eventMSG.score.update, scores);
+//         io.emit(messageType.score.update, scores);
 //     });
 
 //     //for testing...
@@ -384,7 +384,7 @@ app.get('/', function(req, res){
 //     socket.on('serverHardware', function(){
 //         socket.emit('serverHardware', { numCPUs: numCPUs });
 //     });
-//});
+// });
 
 
 //TESTING
@@ -396,7 +396,7 @@ const uuidv4 = require('uuid/v4');
 
 const wss = new WebSocket.Server({ server });
 
-//implementing own broadcast
+//implementing own broadcasts
 wss.broadcast = function broadcast(data){
     wss.clients.forEach(function(client){
         if(client.readyState === WebSocket.OPEN){
@@ -405,22 +405,34 @@ wss.broadcast = function broadcast(data){
     });
 };
 
+function broadcast_client(ws){
+    //broadcast to every socket except the client socket itself
+    wss.clients.forEach(function each(client) {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send(data);
+        }
+    });
+}
+
 wss.on('connection', (ws) => {
     ws.uuid = uuidv4(); //generate ID for client
     console.log(`Client Connected: ${ws.uuid}`);
 
-    ws.on('message', function incoming(message){
-        console.log(`Got message: ${message}`);
+    ws.on('message', (message) => {
+        console.log(message); //DEBUGGING
 
-        // Broadcast to everyone else example...
-        // wss.clients.forEach(function each(client) {
-        //     if (client !== ws && client.readyState === WebSocket.OPEN) {
-        //     client.send(data);
-        //     }
-        // });
+        if(message instanceof Buffer){
+            var buffer = message;
+            
+            console.log('Received buffer');
+            console.log(buffer);
+
+            //socket.send(buffer);
+        }
     });
 
     ws.send('Server says hi!: your id is:'+ws.uuid);
+    ws.send(new Buffer.from([1,2,3]));
 
     ws.on('close', () => {
         console.log(`Client Disconnected: ${ws.uuid}`);
@@ -431,3 +443,7 @@ wss.on('connection', (ws) => {
 server.listen(PORT, function(){
     console.log(`Listening on ${server.address().port}`);
 });
+
+function emit(eventName, data){
+
+}

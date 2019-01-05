@@ -34,6 +34,7 @@
             //var socket = new WebSocket('wss://echo.websocket.org');
             var HOST = location.origin.replace(/^http/, 'ws');
             var socket = new WebSocket(HOST);
+            socket.binaryType = 'arraybuffer';
 
             socket.onopen = function(event) {
                 console.log(`Connection established`);
@@ -55,10 +56,13 @@
                 //     console.log('Received data string');
                 // }
 
-                // if(event.data instanceof ArrayBuffer ){
-                //     var buffer = event.data;
-                //     console.log('Received arraybuffer');
-                // }
+                if(event.data instanceof ArrayBuffer){
+                    var buffer = event.data;
+                    console.log('Received arraybuffer');
+                    console.log(new Int8Array(buffer));
+
+                    socket.send(buffer);
+                }
             };
 
             socket.onclose = function (event) {

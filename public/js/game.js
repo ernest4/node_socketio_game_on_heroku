@@ -30,7 +30,7 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
-const eventMSG = Object.freeze({
+const messageType = Object.freeze({
     player: Object.freeze({
         list: "1",
         new: "2",
@@ -74,7 +74,7 @@ function create() {
     other game objects. */
 
     //this.socket.on('currentPlayers', function(players){
-    this.socket.on(eventMSG.player.list, function(players){
+    this.socket.on(messageType.player.list, function(players){
         //for each of the players in the game
         Object.keys(players).forEach(function(id){
             //if the player is this player, add it to the game...
@@ -90,12 +90,12 @@ function create() {
     });
 
     //this.socket.on('newPlayer', function(playerInfo){
-    this.socket.on(eventMSG.player.new, function(playerInfo){
+    this.socket.on(messageType.player.new, function(playerInfo){
         addOtherPlayers(self, playerInfo);
     });
 
     //this.socket.on('disconnect', function(playerId){
-    this.socket.on(eventMSG.player.disconnect, function(playerId){
+    this.socket.on(messageType.player.disconnect, function(playerId){
         self.otherPlayers.children.getArray().forEach(function(otherPlayer){
             if (otherPlayer.playerId === playerId){
                 otherPlayer.destroy();
@@ -103,7 +103,7 @@ function create() {
         });
     });
 
-    this.socket.on(eventMSG.player.moved, function(playerInfo){
+    this.socket.on(messageType.player.moved, function(playerInfo){
         /*Find the player that moved in the stored array of ther players and
         update it's position and rotation */
 
@@ -156,13 +156,13 @@ function create() {
     this.redScoreText = this.add.text(584, 16, '', {fontSize: '32px', fill: '#FF0000'});
 
     //this.socket.on('scoreUpdate', function(scores){
-    this.socket.on(eventMSG.score.update, function(scores){
+    this.socket.on(messageType.score.update, function(scores){
         self.blueScoreText.setText('Blue: ' + scores.blue);
         self.redScoreText.setText('Red: ' + scores.red);
     });
 
     //this.socket.on('starLocation', function(starLocation){
-    this.socket.on(eventMSG.star.location, function(starLocation){
+    this.socket.on(messageType.star.location, function(starLocation){
         //if star exists, destroy it and make a new one based on recieved location
         if (self.star) self.star.destroy();
         self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
@@ -170,7 +170,7 @@ function create() {
         //collision detection between this ship and star
         self.physics.add.overlap(self.ship, self.star, function(){
             //this.socket.emit('starCollected');
-            this.socket.emit(eventMSG.star.collected);
+            this.socket.emit(messageType.star.collected);
         }, null, self);
     });
 }
@@ -214,8 +214,8 @@ function update(time, deltaTime) {
         var y = this.ship.y;
         var r = this.ship.rotation;
         if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)){
-            //this.socket.emit(eventMSG.player.movement, movementToBinary({ x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation}));
-            this.socket.emit(eventMSG.player.movement, { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation});
+            //this.socket.emit(messageType.player.movement, movementToBinary({ x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation}));
+            this.socket.emit(messageType.player.movement, { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation});
         }
 
         //save old position data
