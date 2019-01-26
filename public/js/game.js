@@ -32,6 +32,7 @@ var config = {
 var game = new Phaser.Game(config);
 const messageType = Object.freeze({
     player: Object.freeze({
+        id: "0",
         list: "1",
         new: "2",
         disconnect: "3",
@@ -47,6 +48,94 @@ const messageType = Object.freeze({
     })
 });
 
+var players = {}; //global secondary index of all players
+var this_player_id;
+
+var HOST = location.origin.replace(/^http/, 'ws');
+
+var socket;
+var callbacks = {};
+
+ //check websocket support
+if (window.WebSocket) console.log("You have WebSocket support");
+else alert("ERROR: you do not have WebSocket support. Please use a browser with WebScoket support!");
+
+function connect(callbacks){
+    socket = new WebSocket(HOST);
+
+    socket.binaryType = 'arraybuffer';
+
+    socket.callbacks = callbacks;
+
+    socket.onopen = function(event) {
+        //console.log(`Connection opened`);
+
+        //socket.send(JSON.stringify({msg: 'Client says hi', data: 0}));
+
+        //socket.close();
+    };
+
+    socket.onmessage = function(event){
+        //console.log(`Client: raw server message -> ${event.data}`);
+
+        if(typeof (event.data) === "string" ){
+            console.log(`Client: got string message`);
+            //create a JSON object
+            var json_message = JSON.parse(event.data);
+            
+            //{msg: msg, data: data}
+            socket.callbacks[json_message.msg](json_message.data);
+        }
+
+        if(event.data instanceof ArrayBuffer){
+            var buffer = event.data;
+            console.log('Received arraybuffer');
+            console.log(new Int8Array(buffer));
+
+            socket.send(buffer);
+        }
+    };
+
+    socket.onclose = function (event) {
+    // Connection closed.
+    // Firstly, check the reason.
+        
+        if (event.code != 1000) {
+            // Error code 1000 means that the connection was closed normally.
+
+            // Try to reconnect code here....
+                
+            if (!navigator.onLine) {
+                console.log("Client: You are offline. Please connect to the Internet and try again.");
+            }
+        }
+        
+        
+        console.log('Client: Connection closed.');
+        alert("Socket connection to server lost. Attempting to reconnect, please wait..."+event.reason);
+
+        setTimeout(function() { 
+            connect(callbacks);
+        }, 2000);
+    };
+
+    socket.onerror = function(event) {
+        console.log(event);
+        console.log(`got error: ${event}`);
+    };
+
+    console.log('Client: Connection opened');
+    alert("Connection to server successful.");
+}
+
+function setcallback(msg, callback){
+    callbacks[msg] = callback;
+};
+
+function emit_json(msg, data){
+    socket.send(JSON.stringify({msg: msg, data: data}));
+}
+
 function preload() {
     // Runs once, loads up assets like images and audio
 
@@ -54,8 +143,6 @@ function preload() {
     this.load.image('otherPlayer', 'assets/enemyBlack5.png');
     this.load.image('star', 'assets/star_gold.png');
 }
-
-var players = {}; //global secondary index of all players
 
 function create() {
     // Runs once, after all assets in preload are loaded
@@ -65,7 +152,8 @@ function create() {
                         and referencing this in a function will reference the
                         function itself rather than the object the function is
                         inside.*/
-    this.socket = io();
+    //this.socket = io();
+    this.socket = socket;
 
     this.otherPlayers = this.physics.add.group(); /*groups in Phaser, they are 
     a way for us to manage similar game objects and control them as one unit.
@@ -73,13 +161,20 @@ function create() {
     game objects separately, we can check for collision between the group and 
     other game objects. */
 
+    //get the server generated ID
+    setcallback(messageType.player.id, function(id){
+        this_player_id = id;
+    });
+
     //this.socket.on('currentPlayers', function(players){
-    this.socket.on(messageType.player.list, function(players){
+    //this.socket.on(messageType.player.list, function(players){
+    setcallback(messageType.player.list, function(players){
+        console.log(`Client: got player list`);
         //for each of the players in the game
         Object.keys(players).forEach(function(id){
             //if the player is this player, add it to the game...
             //if (players[id].playerId === self.socket.id){
-            if (id === self.socket.id){
+            if (id === this_player_id){
             //extract the string ID
             //if (binaryToString(players[id], 7, 27) === self.socket.id){
                 addPlayer(self, players[id]);
@@ -90,12 +185,14 @@ function create() {
     });
 
     //this.socket.on('newPlayer', function(playerInfo){
-    this.socket.on(messageType.player.new, function(playerInfo){
+    //this.socket.on(messageType.player.new, function(playerInfo){
+    setcallback(messageType.player.new, function(playerInfo){
         addOtherPlayers(self, playerInfo);
     });
 
     //this.socket.on('disconnect', function(playerId){
-    this.socket.on(messageType.player.disconnect, function(playerId){
+    //this.socket.on(messageType.player.disconnect, function(playerId){
+    setcallback(messageType.player.disconnect, function(playerId){
         self.otherPlayers.children.getArray().forEach(function(otherPlayer){
             if (otherPlayer.playerId === playerId){
                 otherPlayer.destroy();
@@ -103,7 +200,8 @@ function create() {
         });
     });
 
-    this.socket.on(messageType.player.moved, function(playerInfo){
+    //this.socket.on(messageType.player.moved, function(playerInfo){
+    setcallback(messageType.player.moved, function(playerInfo){
         /*Find the player that moved in the stored array of ther players and
         update it's position and rotation */
 
@@ -146,9 +244,9 @@ function create() {
         this.keyMap.UP = true;
     });
 
-    this.socket.on('testResponse', function(data){
-        console.log(data.val)
-    });
+    // this.socket.on('testResponse', function(data){
+    //     console.log(data.val)
+    // });
     //----TESTING
 
 
@@ -156,23 +254,26 @@ function create() {
     this.redScoreText = this.add.text(584, 16, '', {fontSize: '32px', fill: '#FF0000'});
 
     //this.socket.on('scoreUpdate', function(scores){
-    this.socket.on(messageType.score.update, function(scores){
-        self.blueScoreText.setText('Blue: ' + scores.blue);
-        self.redScoreText.setText('Red: ' + scores.red);
-    });
+    // this.socket.on(messageType.score.update, function(scores){
+    //     self.blueScoreText.setText('Blue: ' + scores.blue);
+    //     self.redScoreText.setText('Red: ' + scores.red);
+    // });
 
-    //this.socket.on('starLocation', function(starLocation){
-    this.socket.on(messageType.star.location, function(starLocation){
-        //if star exists, destroy it and make a new one based on recieved location
-        if (self.star) self.star.destroy();
-        self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+    // //this.socket.on('starLocation', function(starLocation){
+    // this.socket.on(messageType.star.location, function(starLocation){
+    //     //if star exists, destroy it and make a new one based on recieved location
+    //     if (self.star) self.star.destroy();
+    //     self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
 
-        //collision detection between this ship and star
-        self.physics.add.overlap(self.ship, self.star, function(){
-            //this.socket.emit('starCollected');
-            this.socket.emit(messageType.star.collected);
-        }, null, self);
-    });
+    //     //collision detection between this ship and star
+    //     self.physics.add.overlap(self.ship, self.star, function(){
+    //         //this.socket.emit('starCollected');
+    //         this.socket.emit(messageType.star.collected);
+    //     }, null, self);
+    // });
+
+    //once callbacks are set, pass them into the connect function to create socket connection
+    connect(callbacks);
 }
 
 
@@ -201,9 +302,9 @@ function update(time, deltaTime) {
         } else this.physics.velocityFromRotation(this.ship.rotation + 1.5, 10, this.ship.body.acceleration);
 
         //DEBUGGING server hardware
-        if (this.cursors.down.isDown) {
-            this.socket.emit('serverHardware');
-        }
+        // if (this.cursors.down.isDown) {
+        //     this.socket.emit('serverHardware');
+        // }
 
         this.physics.world.wrap(this.ship, 5); /*If the ship goes off screen we
         want it to appear on the other side of the screen with an offset. */
@@ -215,7 +316,8 @@ function update(time, deltaTime) {
         var r = this.ship.rotation;
         if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)){
             //this.socket.emit(messageType.player.movement, movementToBinary({ x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation}));
-            this.socket.emit(messageType.player.movement, { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation});
+            //this.socket.emit(messageType.player.movement, { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation});
+            emit_json(messageType.player.movement, { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation});
         }
 
         //save old position data
